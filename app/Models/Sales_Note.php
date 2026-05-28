@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
 use App\Models\Table;
 use App\Models\Reservation;
+use App\Models\Sales_Detail;
 
 class Sales_Note extends Model
 {
@@ -39,5 +40,10 @@ class Sales_Note extends Model
     public function reservations()
     {
         return $this->belongsTo(Reservation::class, 'reservations_id');
+    }
+
+    public function sales_notes()
+    {
+        return $this->hasMany(Sales_Detail::class, 'sales_notes_id');
     }
 }

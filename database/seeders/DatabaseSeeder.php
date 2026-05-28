@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             ReservationSeeder::class,
             DetailsReservationSeeder::class,
             SalesNoteSeeder::class,
+            SalesDetailSeeder::class,
         ]);
     }
 }
