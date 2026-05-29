@@ -9,6 +9,8 @@ use Illuminate\Database\Seeder;
 
 class DetailsInsumosSeeder extends Seeder
 {
+    private $maxDetails = 50;
+
     public function run(): void
     {
         $notas = Insumos_Notes::all();
@@ -27,10 +29,14 @@ class DetailsInsumosSeeder extends Seeder
         $totalDetalles = 0;
 
         foreach ($notas as $nota) {
+            if ($totalDetalles >= $this->maxDetails) break;
+
             $numDetalles = rand(1, 5);
             $insumosUsados = [];
 
             for ($i = 0; $i < $numDetalles; $i++) {
+                if ($totalDetalles >= $this->maxDetails) break;
+
                 $insumosDisponibles = $insumos->reject(fn($i) => in_array($i->id, $insumosUsados));
                 if ($insumosDisponibles->isEmpty()) {
                     break;

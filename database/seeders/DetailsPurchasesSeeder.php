@@ -9,6 +9,8 @@ use App\Models\Details_Purchases;
 
 class DetailsPurchasesSeeder extends Seeder
 {
+    private $maxDetails = 50;
+
     public function run(): void
     {
         $notas = Purchase_Notes::all();
@@ -27,10 +29,14 @@ class DetailsPurchasesSeeder extends Seeder
         $totalDetalles = 0;
 
         foreach ($notas as $nota) {
+            if ($totalDetalles >= $this->maxDetails) break;
+
             $numDetalles = rand(1, 5);
             $insumosUsados = [];
 
             for ($i = 0; $i < $numDetalles; $i++) {
+                if ($totalDetalles >= $this->maxDetails) break;
+
                 $insumosDisponibles = $insumos->reject(fn($i) => in_array($i->id, $insumosUsados));
                 if ($insumosDisponibles->isEmpty()) {
                     break;
@@ -46,7 +52,7 @@ class DetailsPurchasesSeeder extends Seeder
                     'insumos_id'        => $insumo->id,
                     'purchase_notes_id' => $nota->id,
                     'amount'            => $cantidad,
-                    'price_purchase'    => $precioTotalLinea, // aquí guardamos el total
+                    'price_purchase'    => $precioTotalLinea,
                 ]);
 
                 $insumo->amount += $cantidad;
@@ -56,9 +62,10 @@ class DetailsPurchasesSeeder extends Seeder
             }
 
             $total = Details_Purchases::where('purchase_notes_id', $nota->id)->sum('price_purchase');
-
-            $nota->total_price = $total;
-            $nota->save();
+            if ($total > 0) {
+                $nota->total_price = $total;
+                $nota->save();
+            }
         }
     }
 }

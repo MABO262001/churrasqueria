@@ -10,17 +10,14 @@ use Illuminate\Database\Seeder;
 
 class DetailsReservationSeeder extends Seeder
 {
+    private $maxDetails = 70;
+
     public function run(): void
     {
         $reservas = Reservation::all();
         $mesas = Table::all();
-
-        if ($reservas->isEmpty() || $mesas->isEmpty()) {
-            $this->command->error('No hay reservas o mesas. Ejecuta primero TableSeeder y ReservationSeeder.');
-            return;
-        }
-
         $duracionHoras = 2;
+        $totalDetalles = 0;
 
         $verificarDisponibilidad = function ($mesaId, $fecha, $horaInicio, $duracionHoras, $reservaActualId = null) {
             $inicio = Carbon::parse($fecha . ' ' . $horaInicio);
@@ -30,8 +27,8 @@ class DetailsReservationSeeder extends Seeder
                 ->whereHas('reservations', function ($query) use ($fecha, $inicio, $fin, $duracionHoras, $reservaActualId) {
                     $query->where('date', $fecha)
                         ->where(function ($q) use ($inicio, $fin, $duracionHoras) {
-                            $q->whereRaw('TIME_TO_SEC(hour) < TIME_TO_SEC(?)', [$fin->format('H:i:s')])
-                              ->whereRaw('TIME_TO_SEC(?) < TIME_TO_SEC(hour) + ?', [
+                            $q->whereRaw('EXTRACT(EPOCH FROM hour) < EXTRACT(EPOCH FROM ?::time)', [$fin->format('H:i:s')])
+                              ->whereRaw('EXTRACT(EPOCH FROM ?::time) < EXTRACT(EPOCH FROM hour) + ?', [
                                   $inicio->format('H:i:s'),
                                   $duracionHoras * 3600
                               ]);
@@ -42,22 +39,22 @@ class DetailsReservationSeeder extends Seeder
                 })->exists();
         };
 
-        $reservasConDetalles = 0;
-
         foreach ($reservas as $reserva) {
+            if ($totalDetalles >= $this->maxDetails) break;
+
             $numMesasDeseadas = rand(1, 3);
             $mesasAsignadas = [];
 
             for ($i = 0; $i < $numMesasDeseadas; $i++) {
+                if ($totalDetalles >= $this->maxDetails) break;
+
                 $mesasDisponibles = $mesas->filter(function ($mesa) use ($mesasAsignadas, $reserva, $verificarDisponibilidad, $duracionHoras) {
-                    if (in_array($mesa->id, $mesasAsignadas)) {
-                        return false;
-                    }
+                    if (in_array($mesa->id, $mesasAsignadas)) return false;
                     return $verificarDisponibilidad($mesa->id, $reserva->date, $reserva->hour, $duracionHoras, $reserva->id);
                 });
 
                 if ($mesasDisponibles->isEmpty()) {
-                    $this->command->warn("Reserva ID {$reserva->id}: no hay suficientes mesas disponibles para asignar {$numMesasDeseadas} mesas. Se asignaron {$i}.");
+                    $this->command->warn("Reserva ID {$reserva->id}: no hay suficientes mesas disponibles.");
                     break;
                 }
 
@@ -68,10 +65,7 @@ class DetailsReservationSeeder extends Seeder
                     'reservations_id' => $reserva->id,
                     'tables_id'       => $mesa->id,
                 ]);
-            }
-
-            if (count($mesasAsignadas) > 0) {
-                $reservasConDetalles++;
+                $totalDetalles++;
             }
         }
     }
