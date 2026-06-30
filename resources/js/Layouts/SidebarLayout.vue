@@ -5,6 +5,7 @@ import ThemeProvider from '@/Components/ThemeProvider.vue';
 import ThemeSelector from '@/Components/ThemeSelector.vue';
 import SidebarAdministrationMenu from '@/Components/SidebarAdministrationMenu.vue';
 import SidebarProductsMenu from '@/Components/SidebarProductsMenu.vue';
+import SidebarReservationsMenu from '@/Components/SidebarReservationsMenu.vue';
 import RouteLoadingIndicator from '@/Components/RouteLoadingIndicator.vue';
 import QuickCommandSearch from '@/Components/QuickCommandSearch.vue';
 
@@ -97,6 +98,12 @@ const canSeeProducts = computed(() => {
     });
 });
 
+const canSeeReservations = computed(() => {
+    return userRoles.value.some((role) => {
+        return ['Master', 'Administrador', 'Mesero', 'Cliente'].includes(role);
+    });
+});
+
 const isActive = (path) => {
     return page.url === path || page.url.startsWith(`${path}/`);
 };
@@ -164,6 +171,8 @@ const closeUserMenu = () => {
                 <SidebarAdministrationMenu v-if="canSeeAdministration" />
 
                 <SidebarProductsMenu v-if="canSeeProducts" />
+
+                <SidebarReservationsMenu v-if="canSeeReservations" />
             </nav>
         </aside>
 

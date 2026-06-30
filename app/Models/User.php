@@ -91,4 +91,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Purchase_Notes::class, 'users_admin_id');
     }
+
+    public function createdReservations()
+    {
+        return $this->hasMany(Reservation::class, 'users_id');
+    }
+
+    public function clientReservations()
+    {
+        return $this->hasMany(Reservation::class, 'users_cliente_id');
+    }
 }
