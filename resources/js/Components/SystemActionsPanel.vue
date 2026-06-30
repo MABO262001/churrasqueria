@@ -16,14 +16,80 @@ const props = defineProps({
 const page = usePage();
 
 const currentRoles = computed(() => {
-    return page.props.auth.user?.roles ?? [];
+    const user = page.props.auth?.user ?? null;
+
+    const roles =
+        user?.roles ??
+        user?.role_names ??
+        user?.roleNames ??
+        null;
+
+    if (Array.isArray(roles)) {
+        return roles
+            .map((role) => {
+                if (typeof role === 'string') {
+                    return role;
+                }
+
+                return role?.name;
+            })
+            .filter(Boolean);
+    }
+
+    if (roles && typeof roles === 'object') {
+        return Object.values(roles)
+            .map((role) => {
+                if (typeof role === 'string') {
+                    return role;
+                }
+
+                return role?.name;
+            })
+            .filter(Boolean);
+    }
+
+    const singleRole =
+        user?.role ??
+        user?.user_role ??
+        user?.role_name ??
+        null;
+
+    return singleRole ? [singleRole] : [];
 });
 
 const can = (roles) => {
     return roles.some((role) => currentRoles.value.includes(role));
 };
 
+const routeOrNull = (routeName) => {
+    try {
+        if (typeof route !== 'function') {
+            return null;
+        }
+
+        try {
+            const routerInstance = route();
+
+            if (routerInstance?.has && !routerInstance.has(routeName)) {
+                return null;
+            }
+        } catch {
+            //
+        }
+
+        return route(routeName);
+    } catch {
+        return null;
+    }
+};
+
 const routeWithQuery = (routeName, query = {}) => {
+    const baseUrl = routeOrNull(routeName);
+
+    if (!baseUrl) {
+        return null;
+    }
+
     const params = new URLSearchParams();
 
     Object.entries(query).forEach(([key, value]) => {
@@ -34,7 +100,36 @@ const routeWithQuery = (routeName, query = {}) => {
 
     const queryString = params.toString();
 
-    return queryString ? `${route(routeName)}?${queryString}` : route(routeName);
+    return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+};
+
+const makeAction = ({
+    key,
+    title,
+    description,
+    category,
+    roles,
+    routeName,
+    query = {},
+    icon,
+    keywords = [],
+}) => {
+    const href = routeWithQuery(routeName, query);
+
+    if (!href) {
+        return null;
+    }
+
+    return {
+        key,
+        title,
+        description,
+        category,
+        roles,
+        href,
+        icon,
+        keywords,
+    };
 };
 
 const selectedRole = computed(() => {
@@ -47,124 +142,320 @@ const selectedEmail = computed(() => {
 
 const baseActions = computed(() => {
     const actions = [
-        {
+        makeAction({
             key: 'dashboard',
             title: 'Ir al dashboard',
             description: 'Volver al panel principal del sistema.',
             category: 'General',
             roles: ['Master', 'Administrador', 'Mesero', 'Cliente'],
-            href: route('dashboard'),
+            routeName: 'dashboard',
             icon: 'dashboard',
-        },
-        {
+            keywords: ['inicio', 'panel', 'principal', 'home'],
+        }),
+
+        makeAction({
             key: 'profile',
             title: 'Mi perfil',
             description: 'Ver y editar mis datos de cuenta.',
             category: 'Cuenta',
             roles: ['Master', 'Administrador', 'Mesero', 'Cliente'],
-            href: route('profile.edit'),
+            routeName: 'profile.edit',
             icon: 'user',
-        },
-        {
+            keywords: ['perfil', 'cuenta', 'usuario', 'datos'],
+        }),
+
+        makeAction({
+            key: 'reservation-tables-index',
+            title: 'Visualizar mesas',
+            description: 'Gestionar mesas, capacidad y estado físico.',
+            category: 'Reservas',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'reservation.tables.index',
+            icon: 'tables',
+            keywords: ['mesas', 'mesa', 'capacidad', 'salón', 'disponible', 'inactiva', 'mantenimiento'],
+        }),
+
+        makeAction({
+            key: 'reservation-tables-create',
+            title: 'Añadir mesa',
+            description: 'Registrar una nueva mesa para reservas y ventas.',
+            category: 'Reservas',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'reservation.tables.index',
+            query: {
+                action: 'create',
+            },
+            icon: 'plus',
+            keywords: ['crear mesa', 'nueva mesa', 'agregar mesa', 'registrar mesa'],
+        }),
+
+        makeAction({
+            key: 'admin-reservations-index',
+            title: 'Visualizar reservas internas',
+            description: 'Gestionar reservas, clientes, mesas y estados.',
+            category: 'Reservas',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.reservations.index',
+            icon: 'calendar',
+            keywords: ['reservas', 'reserva', 'reservaciones', 'mesa reservada', 'cliente reserva'],
+        }),
+
+        makeAction({
+            key: 'admin-reservations-create',
+            title: 'Añadir reserva interna',
+            description: 'Registrar una reserva seleccionando cliente, fecha, hora y mesas.',
+            category: 'Reservas',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.reservations.index',
+            query: {
+                action: 'create',
+            },
+            icon: 'reservation',
+            keywords: ['crear reserva', 'nueva reserva', 'agregar reserva', 'registrar reserva', 'reservar mesa'],
+        }),
+
+        makeAction({
+            key: 'admin-reservations-pending',
+            title: 'Reservas pendientes',
+            description: 'Ver reservas que todavía están pendientes de confirmación.',
+            category: 'Reservas',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.reservations.index',
+            query: {
+                state: 'Pendiente',
+            },
+            icon: 'clock',
+            keywords: ['reservas pendientes', 'pendiente', 'confirmar reserva'],
+        }),
+
+        makeAction({
+            key: 'admin-reservations-confirmed',
+            title: 'Reservas confirmadas',
+            description: 'Ver reservas confirmadas para atención.',
+            category: 'Reservas',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.reservations.index',
+            query: {
+                state: 'Confirmada',
+            },
+            icon: 'calendar',
+            keywords: ['reservas confirmadas', 'confirmada', 'confirmadas'],
+        }),
+
+        makeAction({
+            key: 'admin-reservations-in-process',
+            title: 'Reservas en proceso',
+            description: 'Ver reservas que están siendo atendidas.',
+            category: 'Reservas',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.reservations.index',
+            query: {
+                state: 'En Proceso',
+            },
+            icon: 'reservation',
+            keywords: ['reservas en proceso', 'en proceso', 'atendiendo reserva'],
+        }),
+
+        makeAction({
+            key: 'client-reservations-index',
+            title: 'Mis reservas',
+            description: 'Ver historial, estado y cancelación de mis reservas.',
+            category: 'Reservas cliente',
+            roles: ['Cliente'],
+            routeName: 'client.reservations.index',
+            icon: 'calendar',
+            keywords: ['mis reservas', 'mi reserva', 'historial de reservas', 'estado reserva', 'cancelar reserva'],
+        }),
+
+        makeAction({
+            key: 'client-reservations-create',
+            title: 'Reservar mesa',
+            description: 'Crear una nueva reserva seleccionando fecha, hora y mesas disponibles.',
+            category: 'Reservas cliente',
+            roles: ['Cliente'],
+            routeName: 'client.reservations.index',
+            query: {
+                action: 'create',
+            },
+            icon: 'reservation',
+            keywords: ['reservar', 'reservar mesa', 'nueva reserva', 'crear reserva', 'hacer reserva'],
+        }),
+
+        makeAction({
             key: 'view-employees',
             title: 'Visualizar empleados',
             description: 'Listar, buscar, editar y exportar empleados.',
             category: 'Administración',
             roles: ['Master', 'Administrador'],
-            href: route('administracion.empleados.index'),
+            routeName: 'administracion.empleados.index',
             icon: 'users',
-        },
-        {
+            keywords: ['empleados', 'meseros', 'personal'],
+        }),
+
+        makeAction({
             key: 'add-employee',
             title: 'Añadir empleado',
             description: 'Registrar un nuevo empleado con rol Mesero.',
             category: 'Administración',
             roles: ['Master', 'Administrador'],
-            href: routeWithQuery('administracion.empleados.index', { action: 'create' }),
+            routeName: 'administracion.empleados.index',
+            query: {
+                action: 'create',
+            },
             icon: 'plus',
-        },
-        {
+            keywords: ['crear empleado', 'nuevo empleado', 'agregar empleado'],
+        }),
+
+        makeAction({
             key: 'view-clients',
             title: 'Visualizar clientes',
             description: 'Listar clientes, reservas y compras registradas.',
             category: 'Administración',
             roles: ['Master', 'Administrador'],
-            href: route('administracion.clientes.index'),
+            routeName: 'administracion.clientes.index',
             icon: 'clients',
-        },
-        {
+            keywords: ['clientes', 'cliente'],
+        }),
+
+        makeAction({
             key: 'add-client',
             title: 'Añadir cliente',
             description: 'Registrar un nuevo cliente en el sistema.',
             category: 'Administración',
             roles: ['Master', 'Administrador'],
-            href: routeWithQuery('administracion.clientes.index', { action: 'create' }),
+            routeName: 'administracion.clientes.index',
+            query: {
+                action: 'create',
+            },
             icon: 'plus',
-        },
-        {
+            keywords: ['crear cliente', 'nuevo cliente', 'agregar cliente'],
+        }),
+
+        makeAction({
             key: 'view-admins',
             title: 'Visualizar administradores',
             description: 'Revisar usuarios con rol Administrador.',
             category: 'Seguridad',
             roles: ['Master', 'Administrador'],
-            href: route('administracion.administradores.index'),
+            routeName: 'administracion.administradores.index',
             icon: 'shield',
-        },
-        {
+            keywords: ['administradores', 'seguridad'],
+        }),
+
+        makeAction({
             key: 'add-admin',
             title: 'Añadir administrador',
             description: 'Registrar un usuario administrador.',
             category: 'Seguridad',
             roles: ['Master'],
-            href: routeWithQuery('administracion.administradores.index', { action: 'create' }),
+            routeName: 'administracion.administradores.index',
+            query: {
+                action: 'create',
+            },
             icon: 'shield',
-        },
-        {
+            keywords: ['crear administrador', 'nuevo administrador'],
+        }),
+
+        makeAction({
             key: 'search-users',
             title: 'Buscar usuario',
             description: 'Consultar datos y estadísticas por usuario.',
             category: 'Consultas',
             roles: ['Master', 'Administrador'],
-            href: route('administracion.usuarios.buscar'),
+            routeName: 'administracion.usuarios.buscar',
             icon: 'search',
-        },
-    ];
+            keywords: ['buscar usuario', 'consultar usuario'],
+        }),
+
+        makeAction({
+            key: 'audit-log',
+            title: 'Ver bitácora',
+            description: 'Revisar acciones, accesos y movimientos del sistema.',
+            category: 'Seguridad',
+            roles: ['Master', 'Administrador'],
+            routeName: 'administracion.bitacora.index',
+            icon: 'clock',
+            keywords: ['bitacora', 'auditoria', 'logs', 'acciones'],
+        }),
+    ].filter(Boolean);
 
     if (props.selectedUser && can(['Master', 'Administrador'])) {
         if (selectedRole.value === 'Mesero') {
-            actions.unshift({
+            const action = makeAction({
                 key: 'selected-employee',
                 title: 'Ver empleado seleccionado',
                 description: `Abrir el listado filtrado por ${selectedEmail.value}.`,
                 category: 'Usuario seleccionado',
                 roles: ['Master', 'Administrador'],
-                href: routeWithQuery('administracion.empleados.index', { search: selectedEmail.value }),
+                routeName: 'administracion.empleados.index',
+                query: {
+                    search: selectedEmail.value,
+                },
                 icon: 'users',
+                keywords: ['empleado seleccionado', 'mesero seleccionado'],
             });
+
+            if (action) {
+                actions.unshift(action);
+            }
         }
 
         if (selectedRole.value === 'Cliente') {
-            actions.unshift({
+            const action = makeAction({
                 key: 'selected-client',
                 title: 'Ver cliente seleccionado',
                 description: `Abrir el listado filtrado por ${selectedEmail.value}.`,
                 category: 'Usuario seleccionado',
                 roles: ['Master', 'Administrador'],
-                href: routeWithQuery('administracion.clientes.index', { search: selectedEmail.value }),
+                routeName: 'administracion.clientes.index',
+                query: {
+                    search: selectedEmail.value,
+                },
                 icon: 'clients',
+                keywords: ['cliente seleccionado'],
             });
+
+            if (action) {
+                actions.unshift(action);
+            }
+
+            const reservationAction = makeAction({
+                key: 'selected-client-reservations',
+                title: 'Buscar reservas del cliente',
+                description: `Abrir reservas internas filtrando por ${selectedEmail.value}.`,
+                category: 'Usuario seleccionado',
+                roles: ['Master', 'Administrador'],
+                routeName: 'admin.reservations.index',
+                query: {
+                    search: selectedEmail.value,
+                },
+                icon: 'calendar',
+                keywords: ['reservas cliente seleccionado', 'historial reserva cliente'],
+            });
+
+            if (reservationAction) {
+                actions.unshift(reservationAction);
+            }
         }
 
         if (selectedRole.value === 'Administrador' || selectedRole.value === 'Master') {
-            actions.unshift({
+            const action = makeAction({
                 key: 'selected-admin',
                 title: 'Ver administrador seleccionado',
                 description: `Abrir el listado filtrado por ${selectedEmail.value}.`,
                 category: 'Usuario seleccionado',
                 roles: ['Master', 'Administrador'],
-                href: routeWithQuery('administracion.administradores.index', { search: selectedEmail.value }),
+                routeName: 'administracion.administradores.index',
+                query: {
+                    search: selectedEmail.value,
+                },
                 icon: 'shield',
+                keywords: ['administrador seleccionado'],
             });
+
+            if (action) {
+                actions.unshift(action);
+            }
         }
     }
 
@@ -185,7 +476,11 @@ const visibleActions = computed(() => {
                 action.title,
                 action.description,
                 action.category,
-            ].join(' ').toLowerCase().includes(text);
+                ...(action.keywords ?? []),
+            ]
+                .join(' ')
+                .toLowerCase()
+                .includes(text);
         });
 });
 
@@ -200,6 +495,24 @@ const groupedActions = computed(() => {
         return groups;
     }, {});
 });
+
+const iconPath = (icon) => {
+    const icons = {
+        dashboard: 'M4 5h7v7H4V5zm9 0h7v5h-7V5zM4 14h7v5H4v-5zm9-2h7v7h-7v-7z',
+        user: 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0',
+        users: 'M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m0-4a4 4 0 118 0 4 4 0 01-8 0z',
+        clients: 'M16 11a4 4 0 100-8 4 4 0 000 8zM8 13a4 4 0 100-8 4 4 0 000 8zM2 21a6 6 0 0112 0M12 21a6 6 0 0110 0',
+        shield: 'M12 3l7 4v5c0 5-3 8-7 9-4-1-7-4-7-9V7l7-4z',
+        plus: 'M12 5v14M5 12h14',
+        search: 'M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z',
+        clock: 'M12 8v5l3 2m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+        tables: 'M3 10h18M5 10l1.5 10M18.5 20L20 10M8 10V6a4 4 0 018 0v4M7 20h10',
+        calendar: 'M8 7V3m8 4V3M5 11h14M6 5h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2z',
+        reservation: 'M9 12l2 2 4-4M7 4h10a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 012-2z',
+    };
+
+    return icons[icon] ?? icons.search;
+};
 </script>
 
 <template>
@@ -243,63 +556,17 @@ const groupedActions = computed(() => {
                         <div class="flex items-start gap-3">
                             <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--app-card)] text-[var(--app-primary)] shadow-sm transition group-hover:scale-105">
                                 <svg
-                                    v-if="action.icon === 'dashboard'"
                                     class="h-5 w-5"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
                                 >
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 5h7v7H4V5zm9 0h7v5h-7V5zM4 14h7v5H4v-5zm9-2h7v7h-7v-7z" />
-                                </svg>
-
-                                <svg
-                                    v-else-if="action.icon === 'users'"
-                                    class="h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m0-4a4 4 0 118 0 4 4 0 01-8 0z" />
-                                </svg>
-
-                                <svg
-                                    v-else-if="action.icon === 'clients'"
-                                    class="h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 11a4 4 0 100-8 4 4 0 000 8zM8 13a4 4 0 100-8 4 4 0 000 8zM2 21a6 6 0 0112 0M12 21a6 6 0 0110 0" />
-                                </svg>
-
-                                <svg
-                                    v-else-if="action.icon === 'shield'"
-                                    class="h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3l7 4v5c0 5-3 8-7 9-4-1-7-4-7-9V7l7-4z" />
-                                </svg>
-
-                                <svg
-                                    v-else-if="action.icon === 'plus'"
-                                    class="h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14" />
-                                </svg>
-
-                                <svg
-                                    v-else
-                                    class="h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="1.8"
+                                        :d="iconPath(action.icon)"
+                                    />
                                 </svg>
                             </div>
 
@@ -313,8 +580,18 @@ const groupedActions = computed(() => {
                                 </p>
                             </div>
 
-                            <svg class="h-5 w-5 shrink-0 text-[var(--app-muted)] transition group-hover:translate-x-1 group-hover:text-[var(--app-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            <svg
+                                class="h-5 w-5 shrink-0 text-[var(--app-muted)] transition group-hover:translate-x-1 group-hover:text-[var(--app-primary)]"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 5l7 7-7 7"
+                                />
                             </svg>
                         </div>
                     </Link>
@@ -322,7 +599,10 @@ const groupedActions = computed(() => {
             </div>
         </div>
 
-        <div v-else class="mt-6 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-6 text-center">
+        <div
+            v-else
+            class="mt-6 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-6 text-center"
+        >
             <p class="font-black text-[var(--app-text)]">
                 No hay acciones disponibles
             </p>

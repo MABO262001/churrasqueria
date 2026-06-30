@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import SidebarLayout from '@/Layouts/SidebarLayout.vue';
 
@@ -227,27 +227,29 @@ const stateClass = (value) => {
 
     return 'bg-yellow-500/10 text-yellow-600';
 };
+
+onMounted(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('action') === 'create') {
+        openCreate();
+    }
+});
 </script>
 
 <template>
+
     <Head title="Mesas" />
 
-    <SidebarLayout
-        title="Mesas"
-        subtitle="Gestiona mesas, capacidad y estado físico"
-    >
+    <SidebarLayout title="Mesas" subtitle="Gestiona mesas, capacidad y estado físico">
         <div class="space-y-6">
-            <div
-                v-if="flashSuccess"
-                class="rounded-3xl border border-green-500/20 bg-green-500/10 px-5 py-4 text-sm font-black text-green-600"
-            >
+            <div v-if="flashSuccess"
+                class="rounded-3xl border border-green-500/20 bg-green-500/10 px-5 py-4 text-sm font-black text-green-600">
                 {{ flashSuccess }}
             </div>
 
-            <div
-                v-if="flashError"
-                class="rounded-3xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm font-black text-red-600"
-            >
+            <div v-if="flashError"
+                class="rounded-3xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm font-black text-red-600">
                 {{ flashError }}
             </div>
 
@@ -283,15 +285,14 @@ const stateClass = (value) => {
                             Mesas del restaurante
                         </h1>
                         <p class="mt-1 text-sm font-semibold text-[var(--app-muted)]">
-                            El estado físico no reemplaza la disponibilidad por reserva; eso se calcula por fecha y hora.
+                            El estado físico no reemplaza la disponibilidad por reserva; eso se calcula por fecha y
+                            hora.
                         </p>
                     </div>
 
-                    <button
-                        type="button"
+                    <button type="button"
                         class="rounded-2xl bg-[var(--app-primary)] px-5 py-3 text-sm font-black text-white shadow-sm transition hover:opacity-90"
-                        @click="openCreate"
-                    >
+                        @click="openCreate">
                         Nueva mesa
                     </button>
                 </div>
@@ -301,20 +302,14 @@ const stateClass = (value) => {
                 <div class="grid gap-4 xl:grid-cols-[1fr_220px_160px_160px] xl:items-end">
                     <div>
                         <label class="text-sm font-black text-[var(--app-text)]">Buscar en tiempo real</label>
-                        <input
-                            v-model="search"
-                            type="text"
-                            placeholder="Nombre de mesa"
-                            class="mt-2 w-full rounded-2xl border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-text)] focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]"
-                        />
+                        <input v-model="search" type="text" placeholder="Nombre de mesa"
+                            class="mt-2 w-full rounded-2xl border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-text)] focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]" />
                     </div>
 
                     <div>
                         <label class="text-sm font-black text-[var(--app-text)]">Estado</label>
-                        <select
-                            v-model="state"
-                            class="mt-2 w-full rounded-2xl border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-text)] focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]"
-                        >
+                        <select v-model="state"
+                            class="mt-2 w-full rounded-2xl border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-text)] focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]">
                             <option value="">Todos</option>
                             <option value="Sin estado">Sin estado</option>
                             <option v-for="item in states" :key="item" :value="item">
@@ -325,10 +320,8 @@ const stateClass = (value) => {
 
                     <div>
                         <label class="text-sm font-black text-[var(--app-text)]">Mostrar</label>
-                        <select
-                            v-model="perPage"
-                            class="mt-2 w-full rounded-2xl border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-text)] focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]"
-                        >
+                        <select v-model="perPage"
+                            class="mt-2 w-full rounded-2xl border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-text)] focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]">
                             <option value="10">10</option>
                             <option value="20">20</option>
                             <option value="50">50</option>
@@ -337,28 +330,29 @@ const stateClass = (value) => {
                         </select>
                     </div>
 
-                    <button
-                        type="button"
+                    <button type="button"
                         class="rounded-2xl border border-[var(--app-border)] bg-[var(--app-card)] px-5 py-3 text-sm font-black text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)]"
-                        @click="clearFilters"
-                    >
+                        @click="clearFilters">
                         Limpiar
                     </button>
                 </div>
             </section>
 
-            <section class="relative overflow-hidden rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] shadow-sm">
-                <div
-                    v-if="tableLoading"
-                    class="absolute inset-0 z-30 flex items-center justify-center bg-[var(--app-card)]/70 backdrop-blur-sm"
-                >
-                    <div class="flex flex-col items-center gap-3 rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] px-7 py-6 shadow-xl">
-                        <div class="h-12 w-12 animate-spin rounded-full border-4 border-[var(--app-primary-soft)] border-t-[var(--app-primary)]"></div>
+            <section
+                class="relative overflow-hidden rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] shadow-sm">
+                <div v-if="tableLoading"
+                    class="absolute inset-0 z-30 flex items-center justify-center bg-[var(--app-card)]/70 backdrop-blur-sm">
+                    <div
+                        class="flex flex-col items-center gap-3 rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] px-7 py-6 shadow-xl">
+                        <div
+                            class="h-12 w-12 animate-spin rounded-full border-4 border-[var(--app-primary-soft)] border-t-[var(--app-primary)]">
+                        </div>
                         <p class="text-sm font-black text-[var(--app-text)]">Actualizando mesas...</p>
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-3 border-b border-[var(--app-border)] px-6 py-5 md:flex-row md:items-center md:justify-between">
+                <div
+                    class="flex flex-col gap-3 border-b border-[var(--app-border)] px-6 py-5 md:flex-row md:items-center md:justify-between">
                     <div>
                         <h2 class="text-xl font-black text-[var(--app-text)]">Lista de mesas</h2>
                         <p class="mt-1 text-sm font-bold text-[var(--app-muted)]">
@@ -374,7 +368,8 @@ const stateClass = (value) => {
                 <div class="overflow-x-auto">
                     <table class="w-full min-w-[900px] text-left">
                         <thead>
-                            <tr class="border-b border-[var(--app-border)] bg-[var(--app-surface-soft)] text-xs font-black uppercase tracking-[0.16em] text-[var(--app-muted)]">
+                            <tr
+                                class="border-b border-[var(--app-border)] bg-[var(--app-surface-soft)] text-xs font-black uppercase tracking-[0.16em] text-[var(--app-muted)]">
                                 <th class="px-6 py-4">Mesa</th>
                                 <th class="px-6 py-4">Capacidad</th>
                                 <th class="px-6 py-4">Estado físico</th>
@@ -385,7 +380,8 @@ const stateClass = (value) => {
                         </thead>
 
                         <tbody class="divide-y divide-[var(--app-border)]">
-                            <tr v-for="table in rows" :key="table.id" class="transition hover:bg-[var(--app-surface-soft)]">
+                            <tr v-for="table in rows" :key="table.id"
+                                class="transition hover:bg-[var(--app-surface-soft)]">
                                 <td class="px-6 py-5">
                                     <p class="font-black text-[var(--app-text)]">{{ table.name }}</p>
                                 </td>
@@ -395,7 +391,8 @@ const stateClass = (value) => {
                                 </td>
 
                                 <td class="px-6 py-5">
-                                    <span class="rounded-xl px-3 py-1 text-xs font-black" :class="stateClass(table.computed_state)">
+                                    <span class="rounded-xl px-3 py-1 text-xs font-black"
+                                        :class="stateClass(table.computed_state)">
                                         {{ table.computed_state }}
                                     </span>
                                 </td>
@@ -410,21 +407,15 @@ const stateClass = (value) => {
 
                                 <td class="px-6 py-5">
                                     <div class="flex justify-end gap-2">
-                                        <button
-                                            type="button"
-                                            title="Editar mesa"
+                                        <button type="button" title="Editar mesa"
                                             class="rounded-xl bg-[var(--app-surface-soft)] p-2 text-[var(--app-text)] transition hover:bg-[var(--app-primary-soft)] hover:text-[var(--app-primary-text)]"
-                                            @click="openEdit(table)"
-                                        >
+                                            @click="openEdit(table)">
                                             Editar
                                         </button>
 
-                                        <button
-                                            type="button"
-                                            title="Eliminar mesa"
+                                        <button type="button" title="Eliminar mesa"
                                             class="rounded-xl bg-red-500/10 p-2 text-red-500 transition hover:bg-red-500/20"
-                                            @click="askDelete(table)"
-                                        >
+                                            @click="askDelete(table)">
                                             Eliminar
                                         </button>
                                     </div>
@@ -443,13 +434,11 @@ const stateClass = (value) => {
                     </table>
                 </div>
 
-                <div v-if="meta.last_page > 1" class="flex items-center justify-between border-t border-[var(--app-border)] px-6 py-4">
-                    <button
-                        type="button"
+                <div v-if="meta.last_page > 1"
+                    class="flex items-center justify-between border-t border-[var(--app-border)] px-6 py-4">
+                    <button type="button"
                         class="rounded-xl border border-[var(--app-border)] px-4 py-2 text-sm font-black text-[var(--app-muted)] disabled:opacity-40"
-                        :disabled="meta.current_page <= 1"
-                        @click="goToPage(meta.current_page - 1)"
-                    >
+                        :disabled="meta.current_page <= 1" @click="goToPage(meta.current_page - 1)">
                         Anterior
                     </button>
 
@@ -457,24 +446,20 @@ const stateClass = (value) => {
                         Página {{ meta.current_page }} de {{ meta.last_page }}
                     </p>
 
-                    <button
-                        type="button"
+                    <button type="button"
                         class="rounded-xl border border-[var(--app-border)] px-4 py-2 text-sm font-black text-[var(--app-muted)] disabled:opacity-40"
-                        :disabled="meta.current_page >= meta.last_page"
-                        @click="goToPage(meta.current_page + 1)"
-                    >
+                        :disabled="meta.current_page >= meta.last_page" @click="goToPage(meta.current_page + 1)">
                         Siguiente
                     </button>
                 </div>
             </section>
         </div>
 
-        <div
-            v-if="modalOpen"
+        <div v-if="modalOpen"
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-8 backdrop-blur-sm"
-            @mousedown.self="closeModal"
-        >
-            <div class="w-full max-w-xl rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] p-6 shadow-2xl">
+            @mousedown.self="closeModal">
+            <div
+                class="w-full max-w-xl rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] p-6 shadow-2xl">
                 <div class="rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-6">
                     <div class="flex items-start justify-between gap-4">
                         <div>
@@ -486,11 +471,9 @@ const stateClass = (value) => {
                             </h2>
                         </div>
 
-                        <button
-                            type="button"
+                        <button type="button"
                             class="rounded-xl bg-[var(--app-card)] p-2 text-[var(--app-muted)] transition hover:text-[var(--app-primary)]"
-                            @click="closeModal"
-                        >
+                            @click="closeModal">
                             ✕
                         </button>
                     </div>
@@ -499,57 +482,44 @@ const stateClass = (value) => {
                 <form class="mt-6 space-y-5" @submit.prevent="submit">
                     <div>
                         <label class="text-sm font-black text-[var(--app-text)]">Nombre</label>
-                        <input
-                            v-model="form.name"
-                            type="text"
-                            class="mt-2 w-full rounded-2xl border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-text)] focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]"
-                        />
-                        <p v-if="form.errors.name" class="mt-1 text-sm font-bold text-red-500">{{ form.errors.name }}</p>
+                        <input v-model="form.name" type="text"
+                            class="mt-2 w-full rounded-2xl border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-text)] focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]" />
+                        <p v-if="form.errors.name" class="mt-1 text-sm font-bold text-red-500">{{ form.errors.name }}
+                        </p>
                     </div>
 
                     <div>
                         <label class="text-sm font-black text-[var(--app-text)]">Capacidad</label>
-                        <input
-                            v-model="form.amount"
-                            type="number"
-                            min="1"
-                            step="1"
+                        <input v-model="form.amount" type="number" min="1" step="1"
                             class="mt-2 w-full rounded-2xl border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-text)] focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]"
-                            @keydown="blockNegative"
-                            @input="sanitizeAmount"
-                            @blur="sanitizeAmount"
-                        />
-                        <p v-if="form.errors.amount" class="mt-1 text-sm font-bold text-red-500">{{ form.errors.amount }}</p>
+                            @keydown="blockNegative" @input="sanitizeAmount" @blur="sanitizeAmount" />
+                        <p v-if="form.errors.amount" class="mt-1 text-sm font-bold text-red-500">{{ form.errors.amount
+                            }}</p>
                     </div>
 
                     <div>
                         <label class="text-sm font-black text-[var(--app-text)]">Estado físico</label>
-                        <select
-                            v-model="form.state"
-                            class="mt-2 w-full rounded-2xl border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-text)] focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]"
-                        >
+                        <select v-model="form.state"
+                            class="mt-2 w-full rounded-2xl border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-text)] focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]">
                             <option value="">Sin estado / Disponible por defecto</option>
                             <option v-for="item in states" :key="item" :value="item">
                                 {{ item }}
                             </option>
                         </select>
-                        <p v-if="form.errors.state" class="mt-1 text-sm font-bold text-red-500">{{ form.errors.state }}</p>
+                        <p v-if="form.errors.state" class="mt-1 text-sm font-bold text-red-500">{{ form.errors.state }}
+                        </p>
                     </div>
 
                     <div class="flex gap-3 pt-4">
-                        <button
-                            type="button"
+                        <button type="button"
                             class="flex-1 rounded-2xl border border-[var(--app-border)] bg-[var(--app-card)] px-5 py-3 text-sm font-black text-[var(--app-muted)]"
-                            @click="closeModal"
-                        >
+                            @click="closeModal">
                             Cancelar
                         </button>
 
-                        <button
-                            type="submit"
+                        <button type="submit"
                             class="flex-1 rounded-2xl bg-[var(--app-primary)] px-5 py-3 text-sm font-black text-white disabled:opacity-60"
-                            :disabled="form.processing"
-                        >
+                            :disabled="form.processing">
                             {{ form.processing ? 'Guardando...' : modalMode === 'create' ? 'Guardar' : 'Actualizar' }}
                         </button>
                     </div>
@@ -557,12 +527,11 @@ const stateClass = (value) => {
             </div>
         </div>
 
-        <div
-            v-if="confirmOpen"
+        <div v-if="confirmOpen"
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-8 backdrop-blur-sm"
-            @mousedown.self="closeConfirm"
-        >
-            <div class="w-full max-w-md rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] p-6 shadow-2xl">
+            @mousedown.self="closeConfirm">
+            <div
+                class="w-full max-w-md rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] p-6 shadow-2xl">
                 <h2 class="text-xl font-black text-[var(--app-text)]">Eliminar mesa</h2>
                 <p class="mt-2 text-sm font-semibold text-[var(--app-muted)]">
                     ¿Seguro que deseas eliminar la mesa
@@ -570,20 +539,15 @@ const stateClass = (value) => {
                 </p>
 
                 <div class="mt-6 flex gap-3">
-                    <button
-                        type="button"
+                    <button type="button"
                         class="flex-1 rounded-2xl border border-[var(--app-border)] px-5 py-3 text-sm font-black text-[var(--app-muted)]"
-                        @click="closeConfirm"
-                    >
+                        @click="closeConfirm">
                         Cancelar
                     </button>
 
-                    <button
-                        type="button"
+                    <button type="button"
                         class="flex-1 rounded-2xl bg-red-500 px-5 py-3 text-sm font-black text-white disabled:opacity-60"
-                        :disabled="tableLoading"
-                        @click="deleteTable"
-                    >
+                        :disabled="tableLoading" @click="deleteTable">
                         Eliminar
                     </button>
                 </div>

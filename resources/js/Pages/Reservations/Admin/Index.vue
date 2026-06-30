@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import SidebarLayout from '@/Layouts/SidebarLayout.vue';
 
@@ -355,6 +355,14 @@ const stateClass = (value) => {
 
     return 'bg-gray-500/10 text-gray-600';
 };
+
+onMounted(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('action') === 'create') {
+        openCreate();
+    }
+});
 </script>
 
 <template>
