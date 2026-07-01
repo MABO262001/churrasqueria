@@ -17,6 +17,8 @@ use App\Http\Controllers\Order\AdminOrderController;
 use App\Http\Controllers\Order\ClientOrderController;
 use App\Http\Controllers\Insumos\SupplierController;
 use App\Http\Controllers\Insumos\PurchaseNoteController;
+use App\Http\Controllers\Insumos\InsumoNoteController;
+
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -253,6 +255,24 @@ Route::middleware(['auth', 'role:Master|Administrador'])
 
         Route::delete('/compras/{purchaseNote}', [PurchaseNoteController::class, 'destroy'])
             ->name('purchases.destroy');
+
+        Route::get('/notas', [InsumoNoteController::class, 'index'])
+            ->name('notes.index');
+
+        Route::post('/notas', [InsumoNoteController::class, 'store'])
+            ->name('notes.store');
+
+        Route::delete('/notas/{insumosNote}', [InsumoNoteController::class, 'destroy'])
+            ->name('notes.destroy');
+
+        Route::get('/notas/exportar/excel', [InsumoNoteController::class, 'exportExcel'])
+            ->name('notes.export.excel');
+
+        Route::get('/notas/exportar/pdf', [InsumoNoteController::class, 'exportPdf'])
+            ->name('notes.export.pdf');
+
+        Route::get('/notas/exportar/txt', [InsumoNoteController::class, 'exportTxt'])
+            ->name('notes.export.txt');
     });
 
 require __DIR__ . '/auth.php';
