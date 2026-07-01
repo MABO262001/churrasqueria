@@ -94,7 +94,7 @@ class TicketBoardController extends Controller
             return back()->with('error', 'No se puede cambiar el ticket a ese estado desde el estado actual.');
         }
 
-        $ticketStatusService->changeStatus($ticket, $data['status'], auth()->user());
+        $ticketStatusService->changeStatus($ticket, $data['status'], Auth()->user());
 
         return back()->with('success', 'Estado del ticket actualizado correctamente.');
     }
