@@ -8,37 +8,10 @@ import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
-/*
-|--------------------------------------------------------------------------
-| Configuración Ziggy para localhost y servidor Tecnoweb
-|--------------------------------------------------------------------------
-|
-| Localhost:
-|   http://127.0.0.1:8000
-|   http://localhost:8000
-|
-| Servidor:
-|   https://www.tecnoweb.org.bo/inf513/grupo17sc/proyecto2
-|
-| Nota:
-| No duplicamos la subcarpeta en JS. Tomamos el objeto Ziggy generado
-| por @routes y solo corregimos el location actual.
-|
-*/
-
-const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-
-const productionBasePath = '/inf513/grupo17sc/proyecto2';
-
-const normalizeUrl = (value) => String(value || '').replace(/\/+$/, '');
-
 const globalZiggy = window.Ziggy || {};
 
 const ziggyConfig = {
     ...globalZiggy,
-    url: isLocalhost
-        ? normalizeUrl(window.location.origin)
-        : normalizeUrl(`${window.location.origin}${productionBasePath}`),
     location: new URL(window.location.href),
 };
 
