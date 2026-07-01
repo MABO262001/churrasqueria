@@ -10,60 +10,35 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 /*
 |--------------------------------------------------------------------------
-| Ziggy en localhost y servidor Tecnoweb
+| Configuración Ziggy para localhost y servidor Tecnoweb
 |--------------------------------------------------------------------------
 |
 | Localhost:
-| http://127.0.0.1:8000
-| http://localhost:8000
+|   http://127.0.0.1:8000
+|   http://localhost:8000
 |
 | Servidor:
-| https://www.tecnoweb.org.bo/inf513/grupo17sc/proyecto2
+|   https://www.tecnoweb.org.bo/inf513/grupo17sc/proyecto2
 |
-| Importante:
-| Para evitar duplicación de rutas, dejamos `url` solo con el dominio
-| y agregamos la subcarpeta al `uri` de cada ruta.
+| Nota:
+| No duplicamos la subcarpeta en JS. Tomamos el objeto Ziggy generado
+| por @routes y solo corregimos el location actual.
 |
 */
 
+const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
 const productionBasePath = '/inf513/grupo17sc/proyecto2';
 
-const isLocalhost = [
-    'localhost',
-    '127.0.0.1',
-].includes(window.location.hostname);
-
-const basePath = isLocalhost ? '' : productionBasePath;
-const cleanBasePath = basePath.replace(/^\/|\/$/g, '');
+const normalizeUrl = (value) => String(value || '').replace(/\/+$/, '');
 
 const globalZiggy = window.Ziggy || {};
-const originalRoutes = globalZiggy.routes || {};
-
-const prefixedRoutes = Object.entries(originalRoutes).reduce((routes, [name, route]) => {
-    let uri = String(route.uri || '').replace(/^\/+/, '');
-
-    if (!isLocalhost && cleanBasePath) {
-        const alreadyPrefixed =
-            uri === cleanBasePath ||
-            uri.startsWith(`${cleanBasePath}/`);
-
-        if (!alreadyPrefixed) {
-            uri = `${cleanBasePath}/${uri}`;
-        }
-    }
-
-    routes[name] = {
-        ...route,
-        uri,
-    };
-
-    return routes;
-}, {});
 
 const ziggyConfig = {
     ...globalZiggy,
-    url: window.location.origin,
-    routes: prefixedRoutes,
+    url: isLocalhost
+        ? normalizeUrl(window.location.origin)
+        : normalizeUrl(`${window.location.origin}${productionBasePath}`),
     location: new URL(window.location.href),
 };
 
