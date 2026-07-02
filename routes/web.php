@@ -20,15 +20,17 @@ use App\Http\Controllers\Insumos\PurchaseNoteController;
 use App\Http\Controllers\Insumos\InsumoNoteController;
 use App\Http\Controllers\Tickets\ClientTicketController;
 use App\Http\Controllers\Tickets\TicketBoardController;
+use App\Http\Controllers\HomeController;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+// Route::get('/', function () {
+//     return Inertia::render('Welcome', [
+//         'canLogin' => Route::has('login'),
+//         'canRegister' => Route::has('register'),
+//         'laravelVersion' => Application::VERSION,
+//         'phpVersion' => PHP_VERSION,
+//     ]);
+// });
+Route::get('/', HomeController::class)->name('home');
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
