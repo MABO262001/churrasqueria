@@ -6,7 +6,6 @@
     DirectoryIndex index.php
 
     RewriteEngine On
-    RewriteBase /inf513/grupo17sc/proyecto2/
 
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
