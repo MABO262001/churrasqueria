@@ -5,13 +5,15 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-if (file_exists($maintenance = __DIR__.'/../../../../proyecto2_app/storage/framework/maintenance.php')) {
+$basePath = '/home/grupo17sc/proyecto2_app';
+
+if (file_exists($maintenance = $basePath.'/storage/framework/maintenance.php')) {
     require $maintenance;
 }
 
-require __DIR__.'/../../../../proyecto2_app/vendor/autoload.php';
+require $basePath.'/vendor/autoload.php';
 
-$app = require_once __DIR__.'/../../../../proyecto2_app/bootstrap/app.php';
+$app = require_once $basePath.'/bootstrap/app.php';
 
 $kernel = $app->make(Kernel::class);
 
